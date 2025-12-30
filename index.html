@@ -50,6 +50,9 @@
             rows="10"
             placeholder="Enter your text here"
           ></textarea>
+          <button class="speak-btn" id="speak-input">
+            <ion-icon name="volume-high-outline"></ion-icon>
+          </button>
           <div class="chars"><span id="input-chars">0</span> / 5000</div>
         </div>
       </div>
@@ -72,13 +75,18 @@
             <ul class="dropdown-menu"></ul>
           </div>
         </div>
-        <textarea
-          id="output-text"
-          cols="30"
-          rows="10"
-          placeholder="Translated text will appear here"
-          disabled
-        ></textarea>
+        <div class="text-area">
+          <textarea
+            id="output-text"
+            cols="30"
+            rows="10"
+            placeholder="Translated text will appear here"
+            disabled
+          ></textarea>
+          <button class="speak-btn" id="speak-output">
+            <ion-icon name="volume-high-outline"></ion-icon>
+          </button>
+        </div>
       </div>
     </div>
 

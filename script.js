@@ -1,93 +1,92 @@
-const dropdowns = document.querySelectorAll(".dropdown-container"),
-  inputLanguageDropdown = document.querySelector("#input-language"),
-  outputLanguageDropdown = document.querySelector("#output-language");
+// --- Elements ---
+const inputText = document.querySelector("#input-text");
+const outputText = document.querySelector("#output-text");
+const inputChars = document.querySelector("#input-chars");
+const inputLangSelect = document.querySelector("#input-language .selected");
+const outputLangSelect = document.querySelector("#output-language .selected");
+const dropdowns = document.querySelectorAll(".dropdown-container");
+const swapBtn = document.querySelector(".swap-position");
+const darkModeCheckbox = document.getElementById("dark-mode-btn");
+const speakInputBtn = document.getElementById("speak-input");
+const speakOutputBtn = document.getElementById("speak-output");
 
+// --- Populate dropdowns ---
 function populateDropdown(dropdown, options) {
-  dropdown.querySelector("ul").innerHTML = "";
-  options.forEach((option) => {
+  const menu = dropdown.querySelector("ul");
+  menu.innerHTML = "";
+  options.forEach(opt => {
     const li = document.createElement("li");
-    li.innerHTML = `${option.name} (${option.native})`;
-    li.dataset.value = option.code;
+    li.textContent = `${opt.name} (${opt.native})`;
+    li.dataset.value = opt.code;
     li.classList.add("option");
-    dropdown.querySelector("ul").appendChild(li);
-  });
-}
+    menu.appendChild(li);
 
-populateDropdown(inputLanguageDropdown, languages);
-populateDropdown(outputLanguageDropdown, languages);
-
-dropdowns.forEach((dropdown) => {
-  dropdown.addEventListener("click", () => {
-    dropdown.classList.toggle("active");
-  });
-
-  dropdown.querySelectorAll(".option").forEach((item) => {
-    item.addEventListener("click", () => {
-      dropdown.querySelectorAll(".option").forEach((opt) =>
-        opt.classList.remove("active")
-      );
-      item.classList.add("active");
-      const selected = dropdown.querySelector(".selected");
-      selected.innerHTML = item.innerHTML;
-      selected.dataset.value = item.dataset.value;
+    // Select language when clicked
+    li.addEventListener("click", () => {
+      menu.querySelectorAll(".option").forEach(o => o.classList.remove("active"));
+      li.classList.add("active");
+      dropdown.querySelector(".selected").textContent = li.textContent;
+      dropdown.querySelector(".selected").dataset.value = li.dataset.value;
       translate();
     });
   });
-});
-
-document.addEventListener("click", (e) => {
-  dropdowns.forEach((dropdown) => {
-    if (!dropdown.contains(e.target)) dropdown.classList.remove("active");
-  });
-});
-
-const swapBtn = document.querySelector(".swap-position"),
-  inputLanguage = inputLanguageDropdown.querySelector(".selected"),
-  outputLanguage = outputLanguageDropdown.querySelector(".selected"),
-  inputTextElem = document.querySelector("#input-text"),
-  outputTextElem = document.querySelector("#output-text");
-
-swapBtn.addEventListener("click", () => {
-  const temp = inputLanguage.innerHTML;
-  inputLanguage.innerHTML = outputLanguage.innerHTML;
-  outputLanguage.innerHTML = temp;
-
-  const tempValue = inputLanguage.dataset.value;
-  inputLanguage.dataset.value = outputLanguage.dataset.value;
-  outputLanguage.dataset.value = tempValue;
-
-  const tempText = inputTextElem.value;
-  inputTextElem.value = outputTextElem.value;
-  outputTextElem.value = tempText;
-
-  translate();
-});
-
-function translate() {
-  const inputText = inputTextElem.value;
-  const inputLang = inputLanguageDropdown.querySelector(".selected").dataset.value;
-  const outputLang = outputLanguageDropdown.querySelector(".selected").dataset.value;
-  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${inputLang}&tl=${outputLang}&dt=t&q=${encodeURI(inputText)}`;
-
-  fetch(url)
-    .then((res) => res.json())
-    .then((json) => {
-      outputTextElem.value = json[0].map((item) => item[0]).join("");
-    })
-    .catch((err) => console.log(err));
 }
 
-const inputChars = document.querySelector("#input-chars");
+populateDropdown(document.querySelector("#input-language"), languages);
+populateDropdown(document.querySelector("#output-language"), languages);
 
-inputTextElem.addEventListener("input", () => {
-  if (inputTextElem.value.length > 5000) {
-    inputTextElem.value = inputTextElem.value.slice(0, 5000);
-  }
-  inputChars.innerHTML = inputTextElem.value.length;
+// --- Dropdown toggle ---
+dropdowns.forEach(drop => {
+  drop.addEventListener("click", () => drop.classList.toggle("active"));
+});
+document.addEventListener("click", e => {
+  dropdowns.forEach(drop => { if (!drop.contains(e.target)) drop.classList.remove("active"); });
+});
+
+// --- Swap languages and texts ---
+swapBtn.addEventListener("click", () => {
+  [inputLangSelect.textContent, outputLangSelect.textContent] = [outputLangSelect.textContent, inputLangSelect.textContent];
+  [inputLangSelect.dataset.value, outputLangSelect.dataset.value] = [outputLangSelect.dataset.value, inputLangSelect.dataset.value];
+  [inputText.value, outputText.value] = [outputText.value, inputText.value];
   translate();
 });
 
-const darkModeCheckbox = document.getElementById("dark-mode-btn");
-darkModeCheckbox.addEventListener("change", () => {
-  document.body.classList.toggle("dark");
+// --- Translate function using Google Translate API ---
+function translate() {
+  const text = inputText.value;
+  if (!text) { outputText.value = ""; return; }
+
+  const sl = inputLangSelect.dataset.value;
+  const tl = outputLangSelect.dataset.value;
+  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&q=${encodeURIComponent(text)}`;
+
+  fetch(url)
+    .then(res => res.json())
+    .then(data => { outputText.value = data[0].map(i => i[0]).join(""); })
+    .catch(err => console.error(err));
+}
+
+// --- Input character limit and live translate ---
+inputText.addEventListener("input", () => {
+  if (inputText.value.length > 5000) inputText.value = inputText.value.slice(0, 5000);
+  inputChars.textContent = inputText.value.length;
+  translate();
 });
+
+// --- Dark mode toggle ---
+darkModeCheckbox.addEventListener("change", () => document.body.classList.toggle("dark"));
+
+// --- Speech function ---
+function speak(text, lang) {
+  if (!text) return;
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = lang;
+  speechSynthesis.speak(utter);
+}
+
+// --- Speak buttons ---
+speakInputBtn.addEventListener("click", () => {
+  const lang = inputLangSelect.dataset.value === "auto" ? "en" : inputLangSelect.dataset.value;
+  speak(inputText.value, lang);
+});
+speakOutputBtn.addEventListener("click", () => speak(outputText.value, outputLangSelect.dataset.value));
